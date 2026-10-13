@@ -17,6 +17,13 @@ if not DEBUG and (
     raise RuntimeError("Production requires separate strong SECRET_KEY, JWT_SECRET and SIMULATOR_SECRET")
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",")
 CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost:8000").split(",")
+RENDER_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+if RENDER_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_HOSTNAME)
+    CSRF_TRUSTED_ORIGINS.append("https://" + RENDER_HOSTNAME)
+    # Render terminates HTTPS and replaces the incoming forwarded-proto header.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = not DEBUG
 INSTALLED_APPS = [
     "daphne",
     "django.contrib.auth",
@@ -67,6 +74,11 @@ DATABASES = {
     }
 }
 # Smoke-only escape hatch. Booking services explicitly require PostgreSQL.
+if os.getenv("DATABASE_URL"):
+    from .hosting import database_from_url
+
+    DATABASES = {"default": database_from_url(os.environ["DATABASE_URL"])}
+
 if os.getenv("SMOKE_SQLITE") == "1":
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}
 AUTH_USER_MODEL = "seatlock.User"
@@ -125,4 +137,5 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": "INFO"},
 }
 
-LOCAL_POLLING = DEBUG and os.getenv("LOCAL_POLLING") == "1"
+HOSTED_DEMO = os.getenv("HOSTED_DEMO") == "1"
+LOCAL_POLLING = HOSTED_DEMO or (DEBUG and os.getenv("LOCAL_POLLING") == "1")

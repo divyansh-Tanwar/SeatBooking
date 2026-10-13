@@ -72,7 +72,14 @@ def csrf_check(request):
 
 def home(request):
     get_token(request)
-    return render(request, "index.html", {"local_polling": settings.LOCAL_POLLING})
+    return render(
+        request,
+        "index.html",
+        {
+            "local_polling": settings.LOCAL_POLLING,
+            "show_demo_login": settings.DEBUG,
+        },
+    )
 
 
 @api_view(["GET"])

@@ -1,0 +1,29 @@
+# Free web service only. Supply a free external PostgreSQL URL (e.g. Neon).
+# No paid worker, Redis or database is created by this Blueprint.
+services:
+  - type: web
+    name: seatlock-demo
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.lock && python manage.py collectstatic --noinput
+    startCommand: python scripts/serve_demo.py
+    healthCheckPath: /health/ready
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: DEBUG
+        value: "0"
+      - key: HOSTED_DEMO
+        value: "1"
+      - key: COOKIE_SECURE
+        value: "1"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SIMULATOR_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.dummy.EmailBackend
